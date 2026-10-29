@@ -1,73 +1,173 @@
-# How to contribute
+# Contributing to BackSeat
 
-Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use. Check out our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/).
+BackSeat is an engineering project focused on advanced driver assistance, real-time perception, vehicle-control systems, and automotive software development.
 
-Development is coordinated through [Discord](https://discord.comma.ai) and GitHub.
+Contributions should prioritize technical correctness, maintainability, reliability, and measurable improvements.
 
-### Getting Started
+## Getting Started
 
-* Set up your [development environment](/tools/)
-* Join our [Discord](https://discord.comma.ai)
-* Docs are at https://docs.comma.ai and https://blog.comma.ai
+Before contributing:
 
-## What contributions are we looking for?
+1. Review the repository structure and relevant documentation.
+2. Configure the development environment using the available project tools.
+3. Familiarize yourself with the subsystem you intend to modify.
+4. Review existing issues and pull requests to avoid duplicate work.
+5. Verify that your changes are compatible with the existing architecture.
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
-openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal.
+**Repository:** https://github.com/ATLURI0001/BackSeat
 
-### What gets merged?
+**Default branch:** `main`
 
-The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
-If a PR offers *some* value but will take lots of time to get merged, it will be closed.
-Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged.
+## Engineering Priorities
 
-All of these are examples of good PRs:
-* typo fix: https://github.com/commaai/openpilot/pull/30678
-* removing unused code: https://github.com/commaai/openpilot/pull/30573
-* simple car model port: https://github.com/commaai/openpilot/pull/30245
-* car brand port: https://github.com/commaai/openpilot/pull/23331
+BackSeat follows four core development priorities, in descending order:
 
-### What doesn't get merged?
+1. **Safety** — Changes must not introduce unacceptable risks to vehicle-control or safety-critical behavior.
+2. **Reliability** — Components should behave consistently under expected and exceptional conditions.
+3. **Quality** — Implementations should remain maintainable, testable, and architecturally coherent.
+4. **Capabilities** — New functionality should provide demonstrable technical value.
 
-* **style changes**: code is art, and it's up to the author to make it beautiful
-* **500+ line PRs**: clean it up, break it up into smaller PRs, or both
-* **PRs without a clear goal**: every PR must have a singular and clear goal
-* **UI design**: we do not have a good review process for this yet
-* **New features**: We believe openpilot is mostly feature-complete, and the rest is a matter of refinement and fixing bugs. As a result of this, most feature PRs will be immediately closed, however the beauty of open source is that forks can and do offer features that upstream openpilot doesn't.
-* **Negative expected value**: This is a class of PRs that makes an improvement, but the risk or validation costs more than the improvement. The risk can be mitigated by first getting a failing test merged.
+Safety and correctness take precedence over feature expansion.
 
-### First contribution
+## Contribution Areas
 
-[Projects / openpilot bounties](https://github.com/orgs/commaai/projects/26/views/1?pane=info) is the best place to get started and goes in-depth on what's expected when working on a bounty.
-There are a lot of bounties that don't require a comma four or a car.
+Contributions may address:
+
+- Software defects and reliability improvements
+- Performance optimization and resource efficiency
+- Perception and inference infrastructure
+- Planning and control algorithms
+- Driver-monitoring components
+- Vehicle communication interfaces
+- Automated testing and validation
+- Development tooling and documentation
+- Build-system improvements and dependency maintenance
+
+Proposed changes affecting vehicle-control behavior require particularly careful review and validation.
 
 ## Pull Requests
 
-Pull requests should be against the master branch.
+All pull requests should target the `main` branch.
 
-A good pull request has all of the following:
-* a clearly stated purpose
-* every line changed directly contributes to the stated purpose
-* verification, i.e. how did you test your PR?
-* justification
-  * if you've optimized something, post benchmarks to prove it's better
-  * if you've improved your car's tuning, post before and after plots
-* passes the CI tests
+A well-prepared pull request should include:
 
-## Contributing without Code
+- **Purpose:** A concise explanation of the problem being addressed.
+- **Implementation:** A focused description of the changes.
+- **Justification:** Why the proposed approach is appropriate.
+- **Verification:** Tests, simulations, or other evidence supporting correctness.
+- **Compatibility:** Any implications for existing modules, hardware, or dependencies.
+- **Risk Assessment:** Potential failure modes and relevant mitigations.
 
-* Report bugs in GitHub issues.
-* Report driving issues in the `#driving-feedback` Discord channel.
-* Consider opting into cabin camera uploads to improve the driver monitoring model.
-* Connect your device to Wi-Fi regularly, so that we can pull data for training better driving models.
-* Run the `nightly` branch and report issues. This branch is like `master` but it's built just like a release.
-* Annotate images in the [comma10k dataset](https://github.com/commaai/comma10k).
+Keep pull requests narrowly scoped. Large changes should be divided into independently reviewable components wherever practical.
 
-## Contributing Training Data
+### Pull Request Standards
 
-### A guide for forks
+Before submitting a pull request:
 
-In order for your fork's data to be eligible for the training set:
-* **Your cereal messaging structs must be [compatible](../openpilot/cereal#custom-forks)**
-* **The definitions of all the stock messaging structs must not change**: Do not change how any of the fields are set, including everything from `selfdriveState.enabled` to `carState.steeringAngleDeg`. Instead, create your own structs and set them however you'd like.
-* **Do not include cars that are not supported in upstream platforms**: Instead, create new opendbc platforms for cars that you'd like to support outside of upstream, even if it's just a trim-level difference.
+- Confirm that the code builds in the applicable development environment.
+- Run relevant automated tests.
+- Avoid unrelated formatting or structural modifications.
+- Document changes that affect public interfaces or developer workflows.
+- Include performance measurements when claiming optimizations.
+- Provide reproducible evidence for bug fixes.
+- Identify any safety-sensitive behavior affected by the change.
+
+Passing automated tests alone does not establish that vehicle-control software is safe for real-world deployment.
+
+## Review Criteria
+
+Contributions are evaluated according to:
+
+| Criterion | Expectation |
+|---|---|
+| Correctness | Addresses the intended problem without introducing regressions |
+| Safety | Preserves or improves safety-relevant behavior |
+| Maintainability | Follows existing architectural conventions |
+| Testability | Includes appropriate verification |
+| Performance | Avoids unjustified computational overhead |
+| Compatibility | Accounts for affected interfaces and dependencies |
+| Scope | Remains focused on the stated objective |
+
+Acceptance is not guaranteed. Changes may require revision or additional validation before merging.
+
+## First Contributions
+
+Developers unfamiliar with the codebase are encouraged to begin with:
+
+- Documentation corrections
+- Reproducible bug reports
+- Small, isolated defect fixes
+- Test coverage improvements
+- Development-tool enhancements
+- Removal of demonstrably unused code
+
+These contributions provide opportunities to understand the architecture before modifying safety-critical components.
+
+## Reporting Issues
+
+Report technical issues through:
+
+[BackSeat GitHub Issues](https://github.com/ATLURI0001/BackSeat/issues)
+
+Include the following information where applicable:
+
+1. A clear description of the problem.
+2. Steps required to reproduce it.
+3. Expected and observed behavior.
+4. Relevant operating-system, hardware, and software versions.
+5. Logs, traces, or test results.
+6. The commit or branch where the issue was observed.
+
+Do not publish credentials, personal driving data, private location histories, or other sensitive information in public issues.
+
+## Development and Testing
+
+Changes should be validated using the testing infrastructure appropriate to the affected subsystem.
+
+Where applicable, contributors should consider:
+
+- Unit and integration tests
+- Software-in-the-loop simulation
+- Regression testing
+- Static analysis
+- Resource and latency measurements
+- Interface compatibility
+- Fault handling and recovery
+- Safety-boundary verification
+
+Changes involving steering, acceleration, braking, or driver-monitoring behavior should not be validated solely through informal testing on public roads.
+
+## Architecture and Compatibility
+
+BackSeat contains interconnected components whose interfaces may be shared across multiple subsystems.
+
+When modifying communication schemas, vehicle interfaces, or control logic:
+
+- Preserve backward compatibility where practical.
+- Identify all affected consumers and dependencies.
+- Document interface changes.
+- Avoid introducing undocumented behavior.
+- Provide migration guidance when compatibility cannot be maintained.
+- Validate changes against the relevant tests.
+
+Internal identifiers inherited from the underlying codebase should not be renamed without reviewing their functional dependencies.
+
+## Documentation Contributions
+
+Documentation improvements should be technically accurate, concise, and consistent with the implemented behavior.
+
+Do not describe experimental functionality as production-ready or claim hardware compatibility, certification, or safety validation without supporting evidence.
+
+## Licensing and Attribution
+
+Contributions must comply with the applicable repository licenses and third-party licensing requirements.
+
+BackSeat incorporates code originally developed in the [openpilot project](https://github.com/commaai/openpilot). Existing copyright notices, historical authorship, and required attribution must be preserved.
+
+Contributors should not submit code or assets they lack permission to distribute.
+
+## Final Principle
+
+**Engineering integrity takes precedence over implementation volume.**
+
+Contributions should make the system safer, more reliable, more understandable, or more capable through changes that can be justified and verified.
