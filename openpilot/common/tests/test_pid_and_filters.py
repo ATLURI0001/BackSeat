@@ -61,6 +61,15 @@ class TestFilters(unittest.TestCase):
     val = bfilt.update(float('nan'))
     self.assertEqual(val, 1.0)
 
+  def test_first_order_filter_recovers_from_nonfinite_initial_state(self):
+    filt = FirstOrderFilter(x0=float('nan'), rc=0.1, dt=0.01)
+    self.assertFalse(filt.initialized)
+    self.assertEqual(filt.update(4.5), 4.5)
+    self.assertTrue(filt.initialized)
+
+    neg_dt = FirstOrderFilter(x0=0.0, rc=0.1, dt=-0.05)
+    self.assertEqual(neg_dt.dt, 0.0)
+
 
 if __name__ == "__main__":
   unittest.main()
