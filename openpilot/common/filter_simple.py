@@ -3,19 +3,22 @@ import numpy as np
 
 class FirstOrderFilter:
   def __init__(self, x0, rc, dt, initialized=True):
-    self.x = float(x0)
-    self.dt = float(dt)
+    self.x = float(x0) if np.isfinite(x0) else 0.0
+    self.dt = max(0.0, float(dt)) if np.isfinite(dt) else 0.0
     self.update_alpha(rc)
-    self.initialized = initialized
+    self.initialized = bool(initialized) and np.isfinite(x0)
 
   def update_alpha(self, rc):
+    if not np.isfinite(rc):
+      self.alpha = 0.0
+      return
     denom = float(rc) + self.dt
     self.alpha = (self.dt / denom) if denom > 0 else 1.0
 
   def update(self, x):
     if not np.isfinite(x):
       return self.x
-    if self.initialized:
+    if self.initialized and np.isfinite(self.x):
       self.x = (1. - self.alpha) * self.x + self.alpha * float(x)
     else:
       self.initialized = True
