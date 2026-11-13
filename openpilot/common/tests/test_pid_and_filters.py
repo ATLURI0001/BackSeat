@@ -3,6 +3,7 @@ import numpy as np
 
 from openpilot.common.pid import PIDController
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
+from openpilot.common.stat_live import RunningStat, RunningStatFilter
 
 
 class TestPIDController(unittest.TestCase):
@@ -69,6 +70,39 @@ class TestFilters(unittest.TestCase):
 
     neg_dt = FirstOrderFilter(x0=0.0, rc=0.1, dt=-0.05)
     self.assertEqual(neg_dt.dt, 0.0)
+
+
+class TestRunningStat(unittest.TestCase):
+  def test_running_stat_welford_accuracy(self):
+    stat = RunningStat()
+    data = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
+    for x in data:
+      stat.push_data(x)
+    self.assertAlmostEqual(stat.mean(), 5.0)
+    self.assertAlmostEqual(stat.variance(), 4.57142857)
+    self.assertAlmostEqual(stat.std(), np.sqrt(4.57142857))
+
+  def test_running_stat_nan_and_inf_guards(self):
+    stat = RunningStat()
+    stat.push_data(10.0)
+    stat.push_data(20.0)
+    mean_before = stat.mean()
+    var_before = stat.variance()
+
+    # Pushing NaN or Inf should be ignored and not poison the stats
+    stat.push_data(float('nan'))
+    stat.push_data(float('inf'))
+    stat.push_data(float('-inf'))
+    self.assertEqual(stat.mean(), mean_before)
+    self.assertEqual(stat.variance(), var_before)
+    self.assertEqual(stat.n, 2)
+
+  def test_running_stat_filter_nan_safety(self):
+    rf = RunningStatFilter()
+    rf.push_and_update(10.0)
+    rf.push_and_update(float('nan'))
+    self.assertEqual(rf.raw_stat.mean(), 10.0)
+    self.assertEqual(rf.raw_stat.n, 1)
 
 
 if __name__ == "__main__":

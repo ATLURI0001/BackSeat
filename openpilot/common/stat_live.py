@@ -6,12 +6,11 @@ class RunningStat:
     self.max_trackable = max_trackable
     if priors is not None:
       # initialize from history
-      self.M = priors[0]
-      self.S = priors[1]
-      self.n = priors[2]
+      self.M = float(priors[0]) if np.isfinite(priors[0]) else 0.
+      self.S = max(0., float(priors[1])) if np.isfinite(priors[1]) else 0.
+      self.n = max(0, int(priors[2]))
       self.M_last = self.M
       self.S_last = self.S
-
     else:
       self.reset()
 
@@ -23,16 +22,18 @@ class RunningStat:
     self.n = 0
 
   def push_data(self, new_data):
+    if not np.isfinite(new_data):
+      return
     # short term memory hack
     if self.max_trackable < 0 or self.n < self.max_trackable:
       self.n += 1
     if self.n == 0:
-      self.M_last = new_data
+      self.M_last = float(new_data)
       self.M = self.M_last
       self.S_last = 0.
     else:
       self.M = self.M_last + (new_data - self.M_last) / self.n
-      self.S = self.S_last + (new_data - self.M_last) * (new_data - self.M)
+      self.S = max(0., self.S_last + (new_data - self.M_last) * (new_data - self.M))
       self.M_last = self.M
       self.S_last = self.S
 
@@ -41,12 +42,12 @@ class RunningStat:
 
   def variance(self):
     if self.n >= 2:
-      return self.S / (self.n - 1.)
+      return max(0., self.S / (self.n - 1.))
     else:
-      return 0
+      return 0.
 
   def std(self):
-    return np.sqrt(self.variance())
+    return float(np.sqrt(self.variance()))
 
 class RunningStatFilter:
   def __init__(self, raw_priors=None, filtered_priors=None, max_trackable=-1):
@@ -58,6 +59,8 @@ class RunningStatFilter:
     self.filtered_stat.reset()
 
   def push_and_update(self, new_data):
+    if not np.isfinite(new_data):
+      return
     _std_last = self.raw_stat.std()
     self.raw_stat.push_data(new_data)
     _delta_std = self.raw_stat.std() - _std_last
