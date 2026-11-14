@@ -12,8 +12,9 @@ class FirstOrderFilter:
     if not np.isfinite(rc):
       self.alpha = 0.0
       return
-    denom = float(rc) + self.dt
-    self.alpha = (self.dt / denom) if denom > 0 else 1.0
+    rc_clamped = max(0.0, float(rc))
+    denom = rc_clamped + self.dt
+    self.alpha = min(1.0, max(0.0, (self.dt / denom) if denom > 0 else 1.0))
 
   def update(self, x):
     if not np.isfinite(x):
@@ -39,7 +40,7 @@ class BounceFilter(FirstOrderFilter):
     scale = self.dt / (1.0 / 60.0)  # tuned at 60 fps
     self.velocity.x += (x - self.x) * self.bounce * scale * self.dt
     self.velocity.update(0.0)
-    if abs(self.velocity.x) < 1e-3:
+    if not np.isfinite(self.velocity.x) or abs(self.velocity.x) < 1e-3:
       self.velocity.x = 0.0
     self.x += self.velocity.x
     return self.x

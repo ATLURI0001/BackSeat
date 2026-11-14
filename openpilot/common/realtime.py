@@ -1,10 +1,15 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
 import gc
+import math
 import os
 import sys
 import time
 
-from setproctitle import getproctitle
+try:
+  from setproctitle import getproctitle
+except ImportError:
+  def getproctitle() -> str:
+    return "python"
 
 from openpilot.common.utils import MovingAverage
 from openpilot.common.hardware import PC
@@ -49,8 +54,10 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
 class Ratekeeper:
   def __init__(self, rate: float, print_delay_threshold: float | None = 0.0) -> None:
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
+    if not math.isfinite(rate) or rate <= 0:
+      raise ValueError(f"Rate must be positive and finite, got {rate}")
     self._interval = 1. / rate
-    self._print_delay_threshold = print_delay_threshold
+    self._print_delay_threshold = max(0.0, float(print_delay_threshold)) if print_delay_threshold is not None else None
     self._frame = 0
     self._remaining = 0.0
     self._process_name = getproctitle()
