@@ -30,17 +30,19 @@ class FirstOrderFilter:
 class BounceFilter(FirstOrderFilter):
   def __init__(self, x0, rc, dt, initialized=True, bounce=2):
     self.velocity = FirstOrderFilter(0.0, 0.15, dt)
-    self.bounce = bounce
+    self.bounce = float(bounce) if np.isfinite(bounce) else 2.0
     super().__init__(x0, rc, dt, initialized)
 
   def update(self, x):
     if not np.isfinite(x):
       return self.x
     super().update(x)
-    scale = self.dt / (1.0 / 60.0)  # tuned at 60 fps
+    scale = self.dt / (1.0 / 60.0) if self.dt > 0 else 1.0  # tuned at 60 fps
     self.velocity.x += (x - self.x) * self.bounce * scale * self.dt
     self.velocity.update(0.0)
     if not np.isfinite(self.velocity.x) or abs(self.velocity.x) < 1e-3:
       self.velocity.x = 0.0
     self.x += self.velocity.x
+    if not np.isfinite(self.x):
+      self.x = float(x)
     return self.x

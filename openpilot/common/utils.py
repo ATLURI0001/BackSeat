@@ -58,11 +58,19 @@ def sudo_read(path: str) -> str:
 
 class MovingAverage:
   def __init__(self, window_size: int):
+    if isinstance(window_size, bool) or not isinstance(window_size, (int, float)) or not math.isfinite(window_size):
+      window_size = 1
     self.window_size: int = max(1, int(window_size))
     self.buffer: list[float] = [0.0] * self.window_size
     self.index: int = 0
     self.count: int = 0
     self.sum: float = 0.0
+
+  def reset(self):
+    self.buffer = [0.0] * self.window_size
+    self.index = 0
+    self.count = 0
+    self.sum = 0.0
 
   def add_value(self, new_value: float):
     if not math.isfinite(new_value):
