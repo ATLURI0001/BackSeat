@@ -3,7 +3,7 @@ import numpy as np
 class RunningStat:
   # tracks realtime mean and standard deviation without storing any data
   def __init__(self, priors=None, max_trackable=-1):
-    self.max_trackable = max_trackable
+    self.max_trackable = max(1, int(max_trackable)) if max_trackable >= 0 else -1
     if priors is not None:
       # initialize from history
       self.M = float(priors[0]) if np.isfinite(priors[0]) else 0.

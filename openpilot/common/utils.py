@@ -1,11 +1,15 @@
 import io
+import math
 import os
 import tempfile
 import contextlib
 import subprocess
 import time
 import functools
-import zstandard as zstd
+try:
+  import zstandard as zstd
+except ImportError:
+  zstd = None
 
 LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a small step change
 
@@ -54,17 +58,19 @@ def sudo_read(path: str) -> str:
 
 class MovingAverage:
   def __init__(self, window_size: int):
-    self.window_size: int = window_size
-    self.buffer: list[float] = [0.0] * window_size
+    self.window_size: int = max(1, int(window_size))
+    self.buffer: list[float] = [0.0] * self.window_size
     self.index: int = 0
     self.count: int = 0
     self.sum: float = 0.0
 
   def add_value(self, new_value: float):
+    if not math.isfinite(new_value):
+      return
     # Update the sum: subtract the value being replaced and add the new value
     self.sum -= self.buffer[self.index]
-    self.buffer[self.index] = new_value
-    self.sum += new_value
+    self.buffer[self.index] = float(new_value)
+    self.sum += float(new_value)
 
     # Update the index in a circular manner
     self.index = (self.index + 1) % self.window_size

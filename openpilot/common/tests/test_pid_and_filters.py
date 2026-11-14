@@ -4,6 +4,7 @@ import numpy as np
 from openpilot.common.pid import PIDController
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.common.stat_live import RunningStat, RunningStatFilter
+from openpilot.common.utils import MovingAverage
 
 
 class TestPIDController(unittest.TestCase):
@@ -103,6 +104,47 @@ class TestRunningStat(unittest.TestCase):
     rf.push_and_update(float('nan'))
     self.assertEqual(rf.raw_stat.mean(), 10.0)
     self.assertEqual(rf.raw_stat.n, 1)
+
+
+class TestMovingAverage(unittest.TestCase):
+  def test_moving_average_accuracy_and_window(self):
+    ma = MovingAverage(window_size=3)
+    ma.add_value(10.0)
+    self.assertEqual(ma.get_average(), 10.0)
+    ma.add_value(20.0)
+    self.assertEqual(ma.get_average(), 15.0)
+    ma.add_value(30.0)
+    self.assertEqual(ma.get_average(), 20.0)
+    ma.add_value(40.0)
+    # window holds 20, 30, 40 -> avg 30
+    self.assertEqual(ma.get_average(), 30.0)
+
+  def test_moving_average_nan_and_bounds_guards(self):
+    # Minimum window size clamped to >= 1
+    ma_zero = MovingAverage(window_size=0)
+    self.assertEqual(ma_zero.window_size, 1)
+    ma_zero.add_value(5.0)
+    self.assertEqual(ma_zero.get_average(), 5.0)
+
+    # Adding NaN or Inf does not corrupt sum or average
+    ma = MovingAverage(window_size=2)
+    ma.add_value(10.0)
+    ma.add_value(float('nan'))
+    ma.add_value(float('inf'))
+    self.assertEqual(ma.get_average(), 10.0)
+    self.assertEqual(ma.count, 1)
+
+  def test_filter_alpha_bounds_and_running_stat_trackable(self):
+    # Alpha must be clamped strictly within [0.0, 1.0] even with negative rc
+    filt = FirstOrderFilter(x0=10.0, rc=-0.05, dt=0.01)
+    self.assertGreaterEqual(filt.alpha, 0.0)
+    self.assertLessEqual(filt.alpha, 1.0)
+
+    # RunningStat max_trackable >= 0 clamped to >= 1
+    stat = RunningStat(max_trackable=0)
+    self.assertEqual(stat.max_trackable, 1)
+    stat.push_data(5.0)
+    self.assertEqual(stat.mean(), 5.0)
 
 
 if __name__ == "__main__":
