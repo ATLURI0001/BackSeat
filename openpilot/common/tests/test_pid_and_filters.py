@@ -146,6 +146,20 @@ class TestMovingAverage(unittest.TestCase):
     stat.push_data(5.0)
     self.assertEqual(stat.mean(), 5.0)
 
+  def test_bounce_filter_and_moving_average_reset(self):
+    bf = BounceFilter(x0=0.0, rc=0.1, dt=0.01, bounce=float('nan'))
+    self.assertEqual(bf.bounce, 2.0)
+    out = bf.update(10.0)
+    self.assertTrue(np.isfinite(out))
+
+    ma = MovingAverage(window_size=3)
+    ma.add_value(1.0)
+    ma.add_value(2.0)
+    self.assertEqual(ma.count, 2)
+    ma.reset()
+    self.assertEqual(ma.count, 0)
+    self.assertTrue(np.isnan(ma.get_average()))
+
 
 if __name__ == "__main__":
   unittest.main()
