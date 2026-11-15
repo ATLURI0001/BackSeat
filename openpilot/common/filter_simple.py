@@ -26,6 +26,10 @@ class FirstOrderFilter:
       self.x = float(x)
     return self.x
 
+  def reset(self, x0=0.0):
+    self.x = float(x0) if np.isfinite(x0) else 0.0
+    self.initialized = np.isfinite(x0)
+
 
 class BounceFilter(FirstOrderFilter):
   def __init__(self, x0, rc, dt, initialized=True, bounce=2):
@@ -46,3 +50,7 @@ class BounceFilter(FirstOrderFilter):
     if not np.isfinite(self.x):
       self.x = float(x)
     return self.x
+
+  def reset(self, x0=0.0):
+    super().reset(x0)
+    self.velocity.reset(0.0)

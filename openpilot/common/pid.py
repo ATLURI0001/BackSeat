@@ -38,19 +38,24 @@ class PIDController:
     self.control = 0.0
 
   def set_limits(self, pos_limit, neg_limit):
-    if neg_limit > pos_limit:
-      pos_limit, neg_limit = neg_limit, pos_limit
-    self.pos_limit = pos_limit
-    self.neg_limit = neg_limit
+    pos = float(pos_limit) if np.isfinite(pos_limit) else 1e308
+    neg = float(neg_limit) if np.isfinite(neg_limit) else -1e308
+    if neg > pos:
+      pos, neg = neg, pos
+    self.pos_limit = pos
+    self.neg_limit = neg
 
   def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
     if not np.isfinite(error) or not np.isfinite(error_rate):
       return self.control
 
-    self.speed = speed
+    safe_speed = float(speed) if np.isfinite(speed) else 0.0
+    safe_ff = float(feedforward) if np.isfinite(feedforward) else 0.0
+
+    self.speed = safe_speed
     self.p = self.k_p * float(error)
     self.d = self.k_d * float(error_rate)
-    self.f = float(feedforward)
+    self.f = safe_ff
 
     if not freeze_integrator:
       i = self.i + self.k_i * self.i_dt * float(error)
