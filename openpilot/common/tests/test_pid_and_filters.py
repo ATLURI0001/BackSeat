@@ -45,6 +45,18 @@ class TestPIDController(unittest.TestCase):
     self.assertEqual(pid.pos_limit, 10.0)
     self.assertEqual(pid.neg_limit, -10.0)
 
+    # NaN limits fallback safely
+    pid.set_limits(float('nan'), float('nan'))
+    self.assertTrue(np.isfinite(pid.pos_limit))
+    self.assertTrue(np.isfinite(pid.neg_limit))
+
+  def test_pid_speed_and_feedforward_nan_safety(self):
+    pid = PIDController(k_p=1.0, k_i=0.5, rate=100)
+    # NaN speed and feedforward must not poison calculation
+    out = pid.update(error=1.0, speed=float('nan'), feedforward=float('nan'))
+    self.assertTrue(np.isfinite(out))
+    self.assertFalse(np.isnan(pid.control))
+
 
 class TestFilters(unittest.TestCase):
   def test_first_order_filter_convergence(self):
@@ -71,6 +83,19 @@ class TestFilters(unittest.TestCase):
 
     neg_dt = FirstOrderFilter(x0=0.0, rc=0.1, dt=-0.05)
     self.assertEqual(neg_dt.dt, 0.0)
+
+  def test_filter_reset(self):
+    filt = FirstOrderFilter(x0=10.0, rc=0.1, dt=0.01)
+    filt.update(20.0)
+    filt.reset(0.0)
+    self.assertEqual(filt.x, 0.0)
+    self.assertTrue(filt.initialized)
+
+    bf = BounceFilter(x0=5.0, rc=0.1, dt=0.01)
+    bf.update(15.0)
+    bf.reset(1.0)
+    self.assertEqual(bf.x, 1.0)
+    self.assertEqual(bf.velocity.x, 0.0)
 
 
 class TestRunningStat(unittest.TestCase):
