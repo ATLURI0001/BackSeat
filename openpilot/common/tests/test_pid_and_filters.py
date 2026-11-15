@@ -4,6 +4,7 @@ import numpy as np
 from openpilot.common.pid import PIDController
 from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
 from openpilot.common.stat_live import RunningStat, RunningStatFilter
+from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.utils import MovingAverage
 
 
@@ -129,6 +130,50 @@ class TestRunningStat(unittest.TestCase):
     rf.push_and_update(float('nan'))
     self.assertEqual(rf.raw_stat.mean(), 10.0)
     self.assertEqual(rf.raw_stat.n, 1)
+
+  def test_running_stat_extrema_and_count(self):
+    stat = RunningStat()
+    self.assertEqual(stat.count, 0)
+    self.assertEqual(stat.min(), 0.0)
+    self.assertEqual(stat.max(), 0.0)
+
+    stat.push_data(5.0)
+    stat.push_data(12.0)
+    stat.push_data(-3.0)
+    stat.push_data(8.0)
+    self.assertEqual(stat.count, 4)
+    self.assertEqual(stat.min(), -3.0)
+    self.assertEqual(stat.max(), 12.0)
+
+    stat.reset()
+    self.assertEqual(stat.count, 0)
+    self.assertEqual(stat.min(), 0.0)
+    self.assertEqual(stat.max(), 0.0)
+
+
+class TestKalmanFilter(unittest.TestCase):
+  def test_kf1d_guards_and_reset(self):
+    kf = KF1D(
+      x0=[[0.0], [0.0]],
+      A=[[1.0, 0.01], [0.0, 1.0]],
+      C=[1.0, 0.0],
+      K=[[0.1], [0.2]],
+    )
+    kf.update(10.0)
+    self.assertNotEqual(kf.x, [[0.0], [0.0]])
+
+    # Invalid set_x calls must not crash or poison state
+    kf.set_x([[float('nan')], [float('inf')]])
+    self.assertFalse(np.isnan(kf.x[0][0]))
+    self.assertFalse(np.isinf(kf.x[1][0]))
+
+    kf.set_x([])  # empty
+    self.assertFalse(np.isnan(kf.x[0][0]))
+
+    # Reset restores zero state
+    kf.reset()
+    self.assertEqual(kf.x, [[0.0], [0.0]])
+
 
 
 class TestMovingAverage(unittest.TestCase):

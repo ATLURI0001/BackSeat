@@ -60,5 +60,20 @@ class KF1D:
     return [[self.x0_0], [self.x1_0]]
 
   def set_x(self, x):
-    self.x0_0 = x[0][0]
-    self.x1_0 = x[1][0]
+    if not hasattr(x, '__getitem__') or len(x) < 2:
+      return
+    try:
+      v0 = float(x[0][0]) if np.isfinite(x[0][0]) else self.x0_0
+      v1 = float(x[1][0]) if np.isfinite(x[1][0]) else self.x1_0
+      self.x0_0 = v0
+      self.x1_0 = v1
+    except (IndexError, TypeError):
+      pass
+
+  def reset(self, x=None):
+    """Reset filter state to zero or custom state vector."""
+    if x is not None:
+      self.set_x(x)
+    else:
+      self.x0_0 = 0.0
+      self.x1_0 = 0.0
