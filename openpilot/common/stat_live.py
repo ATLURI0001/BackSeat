@@ -4,6 +4,8 @@ class RunningStat:
   # tracks realtime mean and standard deviation without storing any data
   def __init__(self, priors=None, max_trackable=-1):
     self.max_trackable = max(1, int(max_trackable)) if max_trackable >= 0 else -1
+    self.min_val = float('inf')
+    self.max_val = float('-inf')
     if priors is not None:
       # initialize from history
       self.M = float(priors[0]) if np.isfinite(priors[0]) else 0.
@@ -20,22 +22,39 @@ class RunningStat:
     self.M_last = 0.
     self.S_last = 0.
     self.n = 0
+    self.min_val = float('inf')
+    self.max_val = float('-inf')
 
   def push_data(self, new_data):
     if not np.isfinite(new_data):
       return
+    val = float(new_data)
+    if val < self.min_val:
+      self.min_val = val
+    if val > self.max_val:
+      self.max_val = val
     # short term memory hack
     if self.max_trackable < 0 or self.n < self.max_trackable:
       self.n += 1
     if self.n == 0:
-      self.M_last = float(new_data)
+      self.M_last = val
       self.M = self.M_last
       self.S_last = 0.
     else:
-      self.M = self.M_last + (new_data - self.M_last) / self.n
-      self.S = max(0., self.S_last + (new_data - self.M_last) * (new_data - self.M))
+      self.M = self.M_last + (val - self.M_last) / self.n
+      self.S = max(0., self.S_last + (val - self.M_last) * (val - self.M))
       self.M_last = self.M
       self.S_last = self.S
+
+  @property
+  def count(self):
+    return self.n
+
+  def min(self):
+    return self.min_val if self.n > 0 else 0.0
+
+  def max(self):
+    return self.max_val if self.n > 0 else 0.0
 
   def mean(self):
     return self.M
