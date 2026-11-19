@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 
 from openpilot.common.pid import PIDController
-from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
+from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter, SlewRateLimiter, JerkLimiter
 from openpilot.common.stat_live import RunningStat, RunningStatFilter
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.utils import MovingAverage
@@ -229,6 +229,39 @@ class TestMovingAverage(unittest.TestCase):
     ma.reset()
     self.assertEqual(ma.count, 0)
     self.assertTrue(np.isnan(ma.get_average()))
+
+  def test_slew_rate_limiter_bounds_and_nan(self):
+    # Slew rate max 10.0 units/sec, dt=0.1s -> max change 1.0 unit per step
+    slew = SlewRateLimiter(x0=0.0, max_up_rate=10.0, max_down_rate=5.0, dt=0.1)
+
+    # Step from 0 to 10 -> clamped to +1.0
+    val = slew.update(10.0)
+    self.assertAlmostEqual(val, 1.0)
+
+    # Step down to -10 -> clamped to -0.5 (max_down = 5.0 * 0.1)
+    val = slew.update(-10.0)
+    self.assertAlmostEqual(val, 0.5)
+
+    # NaN safety: maintains current value
+    val = slew.update(float('nan'))
+    self.assertAlmostEqual(val, 0.5)
+
+    # Reset
+    slew.reset(0.0)
+    self.assertEqual(slew.x, 0.0)
+
+  def test_jerk_limiter_acceleration_clamping(self):
+    # Jerk limiter with max_accel = 5.0 units/s^2, dt = 0.1s
+    jerk = JerkLimiter(x0=0.0, max_accel=5.0, dt=0.1)
+
+    # Step to target 100
+    val = jerk.update(100.0)
+    self.assertTrue(np.isfinite(val))
+    self.assertLess(val, 10.0)  # Acceleration prevents immediate jump
+
+    # NaN safety
+    val = jerk.update(float('inf'))
+    self.assertTrue(np.isfinite(val))
 
 
 if __name__ == "__main__":
